@@ -1,23 +1,13 @@
-import scipy.io
-import numpy.polynomial.hermite as herm
-import math
-import cmath
-import csv
-import statistics
 import sys
-import time
-from itertools import product
-from random import sample
 
-import matplotlib.pyplot as plt
-import networkx as nx
 import numpy as np
 import pandas as pd
 from scipy import linalg
-from scipy.special import rel_entr
-from scipy.stats.mstats import pearsonr, spearmanr
-from utils.shared_func import read_matlab_data, get_pcm, mark, run_modeling_Bradley_Terry, write_to_csv
+from scipy.stats.mstats import pearsonr
+
 from src.data import DATA_DIR
+from utils.shared_func import (get_pcm, mark, read_matlab_data,
+                               run_modeling_Bradley_Terry, write_to_csv)
 
 np.set_printoptions(suppress=True)
 np.set_printoptions(threshold=sys.maxsize)
