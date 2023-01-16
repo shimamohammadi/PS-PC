@@ -7,7 +7,7 @@ from scipy import linalg
 from scipy.stats.mstats import pearsonr
 
 from src.data import DATA_DIR
-from utils.shared_func import (get_pcm, mark, read_matlab_data,
+from data_collection.shared_func import (get_pcm, mark, read_matlab_data,
                                run_modeling_Bradley_Terry)
 
 np.set_printoptions(suppress=True)
