@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import scipy.io
 from scipy import linalg
+import matplotlib.pyplot as plt
 
 from src.data import DATA_DIR
 
@@ -92,3 +93,24 @@ def write_to_csv(file_name, results_matrix):
         for row in range(len(results_matrix)):
             for col in range(row+1, len(results_matrix)):
                 writer.writerow([row, col, results_matrix[row, col]])
+
+
+def plot(kld_plcc_approx_multivariate_prob, entropy_plcc, plcc_random, ref_name):
+    # num = [i for i in range(1, 120)]
+    num_kld = [i for i in range(len(kld_plcc_approx_multivariate_prob))]
+    num_entropy = [i for i in range(len(entropy_plcc))]
+    num_rand = [i for i in range(len(plcc_random))]
+    fig, ax = plt.subplots()
+    # ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    ax.plot(num_kld, kld_plcc_approx_multivariate_prob,
+            'r.-',  label='KLD_based labeling')
+    ax.plot(num_entropy, entropy_plcc, 'g.-', label='Entropy_based labeling')
+    ax.plot(num_rand, plcc_random, 'b.-',   label='Random_based labeling')
+    ax.set_title('Pearson vs number of pairs removed for ' +
+                 ref_name,  fontsize=6)
+    ax.legend()
+    ax.grid()
+    ax.set_xlabel('Number of pairs removed')
+    ax.set_ylabel('PLCC')
+    fig.savefig(ref_name+'.pdf')
+    plt.show()

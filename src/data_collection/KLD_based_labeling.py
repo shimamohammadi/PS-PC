@@ -100,7 +100,7 @@ def run(conditions, pcm_current, prob_full, pstd_full, scores_full, final_result
 
         mark(marked_matrix, pair_i, pair_j, True)
         mark(final_result, pair_i, pair_j, True)
-        if(plcc < 0.99):
+        if(plcc <= 0.98):
             pcm_current[pair_i, pair_j] = temp_ij
             pcm_current[pair_j, pair_i] = temp_ji
             mark(final_result, pair_i, pair_j, False)
@@ -114,7 +114,7 @@ def main():
 
     CONDITIONS = 16
     ref_name = 'data1'
-    raw_data = read_matlab_data('VQA', ref_name)
+    raw_data = read_matlab_data('IQA', ref_name)
     pcm_full = get_pcm(CONDITIONS, raw_data)
 
     [scores_full, _, _, prob_full, pstd_full,

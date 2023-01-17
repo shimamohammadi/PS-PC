@@ -8,7 +8,7 @@ from scipy.stats.mstats import pearsonr
 
 from src.data import DATA_DIR
 from data_collection.shared_func import (get_pcm, mark, read_matlab_data,
-                               run_modeling_Bradley_Terry)
+                                         run_modeling_Bradley_Terry)
 
 np.set_printoptions(suppress=True)
 np.set_printoptions(threshold=sys.maxsize)
@@ -23,12 +23,20 @@ def select_min_value_from_entropy_result(entropy_result, marked_matrix):
 
 
 def entropy_estimation(prior_pcm, num_images):
+
+    # Entropy = -plog(p)-(1-p)log(1-p)
     entropy_result = np.zeros([num_images, num_images])
+    p = np.zeros([num_images, num_images])
+    for i in range(num_images):
+        for j in range(num_images):
+            if(prior_pcm[i, j] == 0):
+                p[i, j] = 0
+            else:
+                p[i, j] = (prior_pcm[i, j] /
+                           (prior_pcm[i, j] + prior_pcm[j, i]))
+    temp = np.subtract(1, p)
 
-    temp = np.subtract(32, prior_pcm)
-
-    entropy_result = - \
-        np.multiply(prior_pcm, np.log2(prior_pcm)) - \
+    entropy_result = - np.multiply(p, np.log2(p)) - \
         np.multiply(temp, np.log2(temp))
     entropy_result[np.isnan(entropy_result)] = 0
     return entropy_result
@@ -56,7 +64,7 @@ def run(conditions, pcm_current, scores_full, final_result, marked_matrix, entro
 
         mark(marked_matrix, pair_i, pair_j, True)
         mark(final_result, pair_i, pair_j, True)
-        if(plcc < 0.99):
+        if(plcc <= 0.98):
             pcm_current[pair_i, pair_j] = temp_ij
             pcm_current[pair_j, pair_i] = temp_ji
             mark(final_result, pair_i, pair_j, False)
