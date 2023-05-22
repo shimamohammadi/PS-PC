@@ -1,4 +1,4 @@
-# Offline_sampling
+# Predictive Sampling for Efficient Pairwise Subjective Image Quality Assessment
 An offline sampling strategy for pair reduction in pairwise subjective test
 
 ## How to Run the code
