@@ -8,9 +8,6 @@ An offline sampling strategy for pair reduction in pairwise subjective test
 export PYTHONPATH=${PWD}
 ```
 
-2. Run:
-```
-python src/main.py
-```
+The source code will be updated soon.
 
 # Acknowledgements
