@@ -22,10 +22,10 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
 import statistics
-from src.labeling.parent_reference import Reference
+from src.Training.Groundtruth_data_collection.parent_class import ParentClass
 
 
-class KLDClass(Reference):
+class KLDClass(ParentClass):
     """This is the class definintion for each reference that has degraded images
     """
 
@@ -33,13 +33,12 @@ class KLDClass(Reference):
         super().__init__(df_test_features, ref_name)
 
         # The kld matrix is updated every time the reference object is selected
-        self.kld_matrix = np.zeros((self.CONDITIONS, self.CONDITIONS))
         self.kld_matrix = self.create_kld_matrix()
 
     def create_kld_matrix(self):
         """This function removes a pair in each iteration from the current_pcm, and calculate the kld
         """
-
+        kld_matrix = np.zeros((self.CONDITIONS, self.CONDITIONS))
         for row in range(self.CONDITIONS):
             for col in range(row+1, self.CONDITIONS):
                 # Storing values of the current_pcm before updating their values
@@ -50,7 +49,7 @@ class KLDClass(Reference):
                 self.current_pcm[col, row] = self.prediction_pcm[col, row]
 
                 # Infer scores from the updated current_pcm
-                [_, _, _, p_tmp, pstd_tmp, _] = self.get_scores(
+                [p_tmp, pstd_tmp] = self.get_scores(
                     self.current_pcm)
 
                 # Calculate KLD between prior(groundtruth) and posterior(current_pcm)
@@ -61,8 +60,9 @@ class KLDClass(Reference):
                 self.current_pcm[row, col] = temp_1
                 self.current_pcm[col, row] = temp_2
 
-                self.kld_matrix[row, col] = kld_res - 16
-                self.kld_matrix[col, row] = kld_res - 16
+                kld_matrix[row, col] = kld_res - 16
+                kld_matrix[col, row] = kld_res - 16
+        return kld_matrix
 
     def select_min_value_from_KLD_matrix(self):
         """This function outputs the minimum value in the KLD matrix and the coresponding indexes 

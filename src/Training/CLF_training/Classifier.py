@@ -123,11 +123,47 @@ def normalize_features(X_train):
     return X_train_transformed
 
 
+def merge(features, labeld_pairs):
+    """This function recieves two dataframe and merge them based on the common features
+
+    Args:
+        features: A dataframe of features extreacted from PC-IQA database
+        labeld_pairs: A dataframe of every possible pair of images (pair_a, pair_b) 
+        in the training set along with a label (defer/predict).
+
+    Returns:
+        dataframes: two dataframs (X_train and y_train) 
+    """
+
+    # Merge labeld_pairs, features with the common feature (pair_a)
+    first_df = pd.merge(labeld_pairs, features)
+    features.rename({'Pair_a': 'Pair_b'}, axis='columns', inplace=True)
+    second_df = pd.merge(labeld_pairs, features)
+    train_set = pd.merge(first_df, second_df, on=[
+                         'Pair_a', 'Pair_b'], suffixes=['_a', '_b'])
+    train_set.drop(['Defer_b', 'ms_ssim1_a', 'ms_ssim1_b',
+                    'lpips_yuv_a', 'lpips_yuv_b',
+                    'dists_yuv_a', 'dists_yuv_b',
+                    'lpips_y_a', 'dists_y_a',
+                    'lpips_y_b', 'dists_y_b',
+
+                    'Pair_a', 'Pair_b'], axis=1, inplace=True)
+    train_set.rename({'Defer_a': 'Defer'}, axis='columns', inplace=True)
+    X_train = train_set.drop(['Defer'], axis=1).copy()
+    y_train = train_set['Defer'].copy()
+    return X_train, y_train
+
+
 def main():
 
     # Read data
-    X_train, y_train = pd.read_csv(
-        './src/dataset/JPEGAI-quality-metrics-on-IQA.csv', header=0, sep=",")
+    features = pd.read_csv(
+        './src/Feature_extraction/JPEGAI-quality-metrics-on-IQA.csv', header=0, sep=",")
+    labeld_pairs = pd.read_csv(
+        './src/Training/CLF_training/labeled_pairs.csv', header=0, sep=",")
+
+    # Associate features to each pair
+    X_train, y_train = merge(features, labeld_pairs)
 
     # Normalize features
     X_train_transformed = normalize_features(X_train)

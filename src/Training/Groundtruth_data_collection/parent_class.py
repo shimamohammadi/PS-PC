@@ -1,30 +1,11 @@
 from src.tools import read_matlab_data, run_modeling_Bradley_Terry, get_pcm
-import numpy.ma as ma
-import random
-import cmath
-import math
-import numpy.polynomial.hermite as herm
-import scipy.io
-import csv
-import sys
-import scipy.stats as stats
 from sklearn.preprocessing import MinMaxScaler
 import pickle
-
 import numpy as np
-from scipy import linalg
-from scipy.stats.mstats import pearsonr, spearmanr
-import time
-from itertools import product
-from random import sample
-import matplotlib.pyplot as plt
-import matplotlib.pyplot as plt
-import networkx as nx
 import pandas as pd
-import statistics
 
 
-class Reference:
+class ParentClass:
     """This is the class definintion for each reference that has degraded images
     """
 
@@ -39,37 +20,40 @@ class Reference:
         # A matrix to lable each pair as 'predic' or 'defer'
         self.lbl_pairs = np.eye(self.CONDITIONS, dtype=bool)
 
-        # The PCM after removing some pairs, and the corresponding scores and standard deviation
-        self.current_pcm = np.zeros((self.CONDITIONS, self.CONDITIONS))
-        self.current_prob, self.current_std = self.get_scores(self.current_pcm)
-
         # The ground truh pcm, and the corresponding scores and standard deviation
-        self.gth_pcm = self.read_gth_data(self, ref_name)
+        self.gth_pcm = self.read_gth_data(ref_name)
         self.gth_prob, self.gth_std = self.get_scores(self.gth_pcm)
 
+        # The PCM after removing some pairs, and the corresponding scores and standard deviation
+        # Initial current pcm and scores are the same as the groundtruth
+        # self.current_pcm = np.zeros((self.CONDITIONS, self.CONDITIONS))
+        self.current_pcm = np.copy(self.gth_pcm)
+        self.current_prob, self.current_std = self.gth_prob, self.gth_std
+
         # The prediction pcm containing the predictor output
-        self.prediction_pcm = self.apply_predictor(self, df_test_features)
+        self.prediction_pcm = self.apply_predictor(df_test_features)
 
     def load_predicor(self, predictor_name):
         """Load the predictor
         """
-        predictor = pickle.load(open('./Predictor_131415_model.sav', 'rb'))
+        predictor = pickle.load(
+            open('./src/data/Trained models/Predictor/predictor_123_model.sav', 'rb'))
         return predictor
 
     def read_gth_data(self, ref_name):
         """Read the ground truth data
         """
         gth_pcm = np.zeros((self.CONDITIONS, self.CONDITIONS))
-        raw_data = read_matlab_data('IQA', ref_name)
+        raw_data = read_matlab_data(ref_name)
 
         # Get probability of preference
         pcm_temp = get_pcm(self.CONDITIONS, raw_data)
         for i in range(self.CONDITIONS):
             for j in range(self.CONDITIONS):
                 if (pcm_temp[i, j] == 0):
-                    self.gth_pcm[i, j] = 0
+                    gth_pcm[i, j] = 0
                 else:
-                    self.gth_pcm[i, j] = (
+                    gth_pcm[i, j] = (
                         pcm_temp[i, j] / (pcm_temp[i, j] + pcm_temp[j, i]))
         return gth_pcm
 
@@ -77,7 +61,7 @@ class Reference:
         """Apply predictor on the test features, and get predictions
         """
 
-        predictor = self.load_predicor(self, "predictor_name")
+        predictor = self.load_predicor("predictor_name")
         prediction_pcm = np.zeros((self.CONDITIONS, self.CONDITIONS))
 
         # Transform features
@@ -99,6 +83,7 @@ class Reference:
             for col in range(row+1, len(prediction_pcm)):
                 prediction_pcm[col, row] = 1 - \
                     prediction_pcm[row, col]
+        return prediction_pcm
 
     def get_scores(self, pcm):
         """Infer scores from a PCM
@@ -110,5 +95,9 @@ class Reference:
     def mark(self, matrix, pair_i, pair_j, boolean):
         """Mark the matrix as true or false
         """
-        self.marked_pairs[pair_i, pair_j] = boolean
-        self.marked_pairs[pair_j, pair_i] = boolean
+        if(matrix == 'marked_pairs'):
+            self.marked_pairs[pair_i, pair_j] = boolean
+            self.marked_pairs[pair_j, pair_i] = boolean
+        else:
+            self.lbl_pairs[pair_i, pair_j] = boolean
+            self.lbl_pairs[pair_j, pair_i] = boolean

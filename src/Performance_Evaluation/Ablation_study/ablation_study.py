@@ -1,15 +1,10 @@
-import csv
 import pickle
 from itertools import product
 from random import sample
-
 import numpy as np
-import numpy.ma as ma
 import pandas as pd
-import scipy.io
-from scipy import linalg
 from scipy.stats.mstats import pearsonr, spearmanr
-from sklearn.preprocessing import MinMaxScaler, StandardScaler, scale
+from sklearn.preprocessing import MinMaxScaler
 
 from src.tools import get_pcm, read_matlab_data, run_modeling_Bradley_Terry
 
@@ -38,22 +33,24 @@ def frmwrk_with_rnd_clf_with_predictor(gth_prob_pcm, gth_judgments_pcm, X_test_t
     """
     CONDITIONS = 16
     num_defer_pairs = 25
+    trial_num = 0
 
     # Apply predictor
     prediction_pcm = predictor_only(X_test_transformed)
 
     # Apply random classifeir
-    marked_matrix = random_clf(
-        gth_prob_pcm, gth_judgments_pcm, prediction_pcm, num_defer_pairs)
+    marked_matrix = random_clf(num_defer_pairs)
 
     # Update the prediction pcm
     for row in range(CONDITIONS):
         for col in range(CONDITIONS):
             if (marked_matrix[row, col] == False):
                 prediction_pcm[row, col] = gth_prob_pcm[row, col]
+                trial_num += gth_judgments_pcm[row,
+                                               col] + gth_judgments_pcm[col, row]
 
     scores_model = infer_scores(prediction_pcm)
-    return scores_model
+    return scores_model, trial_num
 
 
 def frmwrk_ps_pc(gth_prob_pcm, gth_judgments_pcm, X_test_transformed):
@@ -74,30 +71,32 @@ def frmwrk_ps_pc(gth_prob_pcm, gth_judgments_pcm, X_test_transformed):
         for col in range(CONDITIONS):
             if (clf_only_pcm[row, col] == False):
                 prediction_pcm[row, col] = gth_prob_pcm[row, col]
+                trial_num += gth_judgments_pcm[row,
+                                               col] + gth_judgments_pcm[col, row]
 
     scores_model = infer_scores(prediction_pcm)
-    return scores_model
+    return scores_model, trial_num
 
 
 def read_gth(ref_name):
 
     CONDITIONS = 16
-    raw_data = read_matlab_data('IQA', ref_name)
-    temp_pcm = get_pcm(CONDITIONS, raw_data)
+    raw_data = read_matlab_data(ref_name)
+    gth_judgments_pcm = get_pcm(CONDITIONS, raw_data)
 
-    gth_pcm = np.zeros((CONDITIONS, CONDITIONS))
+    gth_prob_pcm = np.zeros((CONDITIONS, CONDITIONS))
     for i in range(CONDITIONS):
         for j in range(CONDITIONS):
-            if (temp_pcm[i, j] == 0):
-                gth_pcm[i, j] = 0
+            if (gth_judgments_pcm[i, j] == 0):
+                gth_prob_pcm[i, j] = 0
             else:
-                gth_pcm[i, j] = (temp_pcm[i, j] /
-                                 (temp_pcm[i, j] + temp_pcm[j, i]))
+                gth_prob_pcm[i, j] = (gth_judgments_pcm[i, j] /
+                                      (gth_judgments_pcm[i, j] + gth_judgments_pcm[j, i]))
 
     # Get scores for the gth_pcm
-    scores_gth = infer_scores(gth_pcm)
+    gth_scores = infer_scores(gth_prob_pcm)
 
-    return gth_pcm, scores_gth
+    return gth_prob_pcm, gth_judgments_pcm, gth_scores
 
 
 def predictor_only(X_test_transformed):
@@ -112,7 +111,7 @@ def predictor_only(X_test_transformed):
 
     # Fill the matrix from predictor output
     ind_upper = np.triu_indices(CONDITIONS, 1)
-    predictor_results = np.squeeze(predictor_results)
+    predictions = np.squeeze(predictions)
     prediction_pcm[ind_upper] = predictions
     for row in range(CONDITIONS):
         for col in range(row+1, CONDITIONS):
@@ -136,7 +135,8 @@ def clf_only(gth_prob_pcm, gth_judgments_pcm, X_test_transformed):
                 clf_only_pcm[i, j] = 0
 
     # Fill the matrix from Classifeir
-    clf = pickle.load(open('./clf_model.sav', 'rb'))
+    clf = pickle.load(
+        open('./src/data/Trained models/CLF/XGBOOST/clf_test_model.sav', 'rb'))
     cls_results = clf.predict(X_test_transformed)
     ind_upper = np.triu_indices(CONDITIONS, 1)
     clf_output[ind_upper] = cls_results
@@ -160,7 +160,7 @@ def infer_scores(pcm):
     return prob_full
 
 
-def random_clf(gth_pcm, num_defer_pairs):
+def random_clf(num_defer_pairs):
     """Input: The pcm of the predictor output
     output: randomly select some pairs to defer and update the prediction_pcm of the selected pairs from the groundtruth data
     """
@@ -203,8 +203,11 @@ def normalize_features(data):
 
 
 def predict(X_test_transformed):
-    predictor = pickle.load(open('./predictor_model.sav', 'rb'))
+    predictor = pickle.load(
+        open('./src/data/Trained models/Predictor/predictor_123_model.sav', 'rb'))
     predictions = predictor.predict(X_test_transformed)
+
+    predictions = pd.DataFrame(predictions)
 
     # normalize predictions
     predictions = normalize_features(predictions)
@@ -221,11 +224,11 @@ def calculate_correlations(scores_gth, scores_model):
     return plcc, srocc
 
 
-def run_frmwrk_clf_only():
+def run_frmwrk_clf_only(references, ref_name):
     """classifer output is used
     predictor is not used
     """
-    references = [df_test, df_test, df_test, df_test, df_test]
+
     all_ref_gth_scores = []
     all_ref_frmwrk_scores = []
     all_ref_trial_num = 0
@@ -246,20 +249,18 @@ def run_frmwrk_clf_only():
     plcc, srocc = calculate_correlations(
         all_ref_gth_scores, all_ref_frmwrk_scores)
 
-    df_test = pd.read_csv('./src/ref_data1.csv', header=0, sep=",")
     return plcc, srocc, all_ref_trial_num
 
 
-def run_frmwrk_predictor_only():
+def run_frmwrk_predictor_only(references, ref_names):
     """classifer is not used
     predictor is used
     """
-    references = [df_test, df_test, df_test, df_test, df_test]
     all_ref_gth_scores = []
     all_ref_frmwrk_scores = []
     for ref in references:
         # Read groundtruth data
-        gth_prob_pcm, gth_judgments_pcm, gth_scores = read_gth('data1')
+        _, _, gth_scores = read_gth('data1')
 
         # Read and normalize
         X_test_transformed = normalize_features(ref)
@@ -272,18 +273,17 @@ def run_frmwrk_predictor_only():
     plcc, srocc = calculate_correlations(
         all_ref_gth_scores, all_ref_frmwrk_scores)
 
-    df_test = pd.read_csv('./src/ref_data1.csv', header=0, sep=",")
     return plcc, srocc
 
 
-def run_frmwrk_with_rnd_clf_with_predictor():
+def run_frmwrk_with_rnd_clf_with_predictor(references, ref_names):
     """classifer is not used
     predictor is used
     """
     num_defer_pairs = 25
-    references = [df_test, df_test, df_test, df_test, df_test]
     all_ref_gth_scores = []
     all_ref_frmwrk_scores = []
+    all_ref_trial_num = 0
     for ref in references:
         # Read groundtruth data
         gth_prob_pcm, gth_judgments_pcm, gth_scores = read_gth('data1')
@@ -291,27 +291,26 @@ def run_frmwrk_with_rnd_clf_with_predictor():
         # Read and normalize
         X_test_transformed = normalize_features(ref)
 
-        frmwork_scores = frmwrk_with_rnd_clf_with_predictor(
+        frmwork_scores, trial_num = frmwrk_with_rnd_clf_with_predictor(
             gth_prob_pcm, gth_judgments_pcm, X_test_transformed, num_defer_pairs)
 
         all_ref_gth_scores.append(gth_scores)
         all_ref_frmwrk_scores.append(frmwork_scores)
+        all_ref_trial_num += trial_num
 
     plcc, srocc = calculate_correlations(
         all_ref_gth_scores, all_ref_frmwrk_scores)
 
-    df_test = pd.read_csv('./src/ref_data1.csv', header=0, sep=",")
-    return plcc, srocc
+    return plcc, srocc, all_ref_trial_num
 
 
-def run_frmwrk_ps_pc():
+def run_frmwrk_ps_pc(references, ref_names):
     """classifer is not used
     predictor is used
     """
-    num_defer_pairs = 25
-    references = [df_test, df_test, df_test, df_test, df_test]
     all_ref_gth_scores = []
     all_ref_frmwrk_scores = []
+    all_ref_trial_num = 0
     for ref in references:
         # Read groundtruth data
         gth_prob_pcm, gth_judgments_pcm, gth_scores = read_gth('data1')
@@ -319,37 +318,55 @@ def run_frmwrk_ps_pc():
         # Read and normalize
         X_test_transformed = normalize_features(ref)
 
-        frmwork_scores = frmwrk_ps_pc(
+        frmwork_scores, trial_num = frmwrk_ps_pc(
             gth_prob_pcm, gth_judgments_pcm, X_test_transformed)
 
         all_ref_gth_scores.append(gth_scores)
         all_ref_frmwrk_scores.append(frmwork_scores)
+        all_ref_trial_num += trial_num
 
     plcc, srocc = calculate_correlations(
         all_ref_gth_scores, all_ref_frmwrk_scores)
 
-    df_test = pd.read_csv('./src/ref_data1.csv', header=0, sep=",")
-    return plcc, srocc
+    return plcc, srocc, all_ref_trial_num
 
 
 def main():
+    df_data1 = pd.read_csv(
+        './src/data/IQA features/reference_1_features.csv', header=0, sep=",")
+    df_data2 = pd.read_csv(
+        './src/data/IQA features/reference_2_features.csv', header=0, sep=",")
+    df_data3 = pd.read_csv(
+        './src/data/IQA features/reference_3_features.csv', header=0, sep=",")
+    df_data4 = pd.read_csv(
+        './src/data/IQA features/reference_4_features.csv', header=0, sep=",")
+    df_data5 = pd.read_csv(
+        './src/data/IQA features/reference_5_features.csv', header=0, sep=",")
 
-    plcc, srocc, trials = run_frmwrk_clf_only()
-    print(f"plcc is: {plcc}, srocc is: {srocc}")
+    references = [df_data1, df_data2, df_data3, df_data4, df_data5]
+    ref_names = ['data1', 'data2', 'data3', 'data4', 'data5']
 
-    plcc, srocc = run_frmwrk_predictor_only()
+    plcc, srocc, trials = run_frmwrk_clf_only(references, ref_names)
+    print(f"plcc is: {plcc}, srocc is: {srocc}, and trial is{trials}")
+
+    plcc, srocc = run_frmwrk_predictor_only(references, ref_names)
     print(f"plcc is: {plcc}, srocc is: {srocc}")
 
     plcc_vector = []
     srocc_vector = []
-    for repeat in range(25):
-        plcc, srocc = run_frmwrk_with_rnd_clf_with_predictor()
+    trial_vector = []
+    for repeat in range(1):
+        plcc, srocc, trials = run_frmwrk_with_rnd_clf_with_predictor(
+            references, ref_names)
         plcc_vector.append(plcc)
-        srocc_vector.append(srocc_vector)
-        print(f"plcc is: {plcc}, srocc is: {srocc}")
+        srocc_vector.append(srocc)
+        trial_vector.append(trials)
+        print(f"plcc is: {plcc}, srocc is: {srocc}, and trial is{trials}")
+    print(
+        f" Average plcc is: {sum(plcc_vector)/len(plcc_vector)}, average srocc is: {sum(srocc_vector)/len(srocc_vector)}, and average trail is:{sum(trial_vector)/len(trial_vector)}")
 
-    plcc, srocc = run_frmwrk_ps_pc()
-    print(f"plcc is: {plcc}, srocc is: {srocc}")
+    plcc, srocc, trials = run_frmwrk_ps_pc(references, ref_names)
+    print(f"plcc is: {plcc}, srocc is: {srocc}, and trails is {trials}")
 
 
 if __name__ == '__main__':

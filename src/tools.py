@@ -7,11 +7,11 @@ import scipy.io
 from scipy import linalg
 
 
-def read_matlab_data(dataset_name, mat_file):
+def read_matlab_data(mat_file):
     """ Read the groundtruth judgments from Matlab 
     """
     raw_data = scipy.io.loadmat(
-        "./src/dataset_0.98th_old/" + dataset_name + "/" + mat_file)['data_ref']
+        "./src/data/matlab files/" + mat_file+".mat")['data_ref']
     return raw_data
 
 
