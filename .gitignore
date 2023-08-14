@@ -111,8 +111,6 @@ env.bak/
 venv.bak/
 
 
-
-/src/dataset
 /src/data/matlab files
 /*.ipynb
 /__pycache__
