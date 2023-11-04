@@ -153,7 +153,7 @@ def classify(X_test_transformed, clf_name):
 
     # Fill the matrix from Classifeir
     clf = pickle.load(
-        open('./src/data/Trained models/CLF/XGBOOST/0.98/'+clf_name, 'rb'))
+        open('./src/data/Trained models/CLF/XGBOOST/0.97/'+clf_name, 'rb'))
     cls_results = clf.predict(X_test_transformed)
     ind_upper = np.triu_indices(CONDITIONS, 1)
     clf_output[ind_upper] = cls_results
@@ -421,11 +421,12 @@ def main():
 
     # Classifier only
     plcc, srocc, trials = run_frmwrk_clf_only(references, ref_names)
-    print(f"plcc is: {plcc}, srocc is: {srocc}, and trial is{trials}")
+    print(
+        f"clf only results: plcc is: {plcc}, srocc is: {srocc}, and trial is{trials}")
 
     # Predictor only
     plcc, srocc = run_frmwrk_predictor_only(references, ref_names)
-    print(f"plcc is: {plcc}, srocc is: {srocc}")
+    print(f"predictor only results: plcc is: {plcc}, srocc is: {srocc}")
 
     # RndClass+predict
     plcc_vector = []
@@ -439,13 +440,14 @@ def main():
         plcc_vector.append(plcc)
         srocc_vector.append(srocc)
         trial_vector.append(trials)
-        print(f"plcc is: {plcc}, srocc is: {srocc}, and trial is{trials}")
+        # print(f"plcc is: {plcc}, srocc is: {srocc}, and trial is{trials}")
     print(
-        f" Average plcc is: {sum(plcc_vector)/len(plcc_vector)}, average srocc is: {sum(srocc_vector)/len(srocc_vector)}, and average trail is:{sum(trial_vector)/len(trial_vector)}")
+        f" rnadCLF_predictor results: Average plcc is: {sum(plcc_vector)/len(plcc_vector)}, average srocc is: {sum(srocc_vector)/len(srocc_vector)}, and average trail is:{sum(trial_vector)/len(trial_vector)}")
 
     # PS-PC
     plcc, srocc, trials = run_frmwrk_ps_pc(references, ref_names)
-    print(f"plcc is: {plcc}, srocc is: {srocc}, and trails is {trials}")
+    print(
+        f"PS-PC results: plcc is: {plcc}, srocc is: {srocc}, and trails is {trials}")
 
 
 if __name__ == '__main__':

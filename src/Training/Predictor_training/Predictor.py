@@ -21,13 +21,13 @@ def write_to_csv(file_name, prob_pcm, ref_name):
 
 
 def get_probability(pcm):
-    """ A function to convert pcm to probability pcm
+    """ A function to convert PCM with judgments as values to probability PCM
     """
     CONDITIONS = 16
     prob_pcm = np.zeros([CONDITIONS, CONDITIONS])
     for i in range(CONDITIONS):
         for j in range(CONDITIONS):
-            if(pcm[i, j] == 0):
+            if (pcm[i, j] == 0):
                 prob_pcm[i, j] = 0
             else:
                 prob_pcm[i, j] = (pcm[i, j] / (pcm[i, j] + pcm[j, i]))
@@ -53,12 +53,14 @@ def merge(features, pairs_with_probability):
     """This function recieves two dataframe and merge them based on the common features
 
     Args:
-        features: A dataframe of features extreacted from PC-IQA database
+        features: A dataframe of features extreacted from each image in the PC-IQA database
         pairs_with_probability: A dataframe of every possible pair of images (pair_a, pair_b) 
         in the training set along with probability of peference.
 
     Returns:
-        dataframes: two dataframs (X_train and y_train) 
+        dataframes: Two dataframs: X_train and y_train 
+        X_train contains features for each pair (pair_a, pair_b) in the dataset
+        y_tarin contains labels for each pair (pair_a, pair_b) in the dataset
     """
 
     # Merge labeld_pairs, features with the common feature (pair_a)

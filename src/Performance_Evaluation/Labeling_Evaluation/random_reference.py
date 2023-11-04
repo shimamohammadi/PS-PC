@@ -18,10 +18,10 @@ import time
 from itertools import product
 from random import sample
 
-from src.labeling.parent_reference import Reference
+from src.Training.Groundtruth_data_collection.parent_class import ParentClass
 
 
-class RandomClass(Reference):
+class RandomClass(ParentClass):
     """This is the class definintion for each reference that has degraded images
     """
 
