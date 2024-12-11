@@ -40,9 +40,9 @@ The ground truth labels can be obtained by running the following script:
 
 ### Performance Evaluation
 #####  1. Labeling Evaluation:
-Three labeling procedures were proposed and compared in this paper. To compare them, navigate to: `src/Performance_Evaluation/labeling_compare.py` to compare them
+Three labeling procedures were proposed and compared in this paper. To compare them, navigate to: `src/Performance_Evaluation/labeling_compare` 
 #####  2. Ablation Study:
-To evaluate different components of the framework, navigate to: `src/Ablation_study and run ablation_study.py`
+To evaluate different components of the framework, navigate to: `src/Ablation_study and run ablation_study`
 
 # Citation
 ```
