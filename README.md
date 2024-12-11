@@ -13,7 +13,7 @@ Subjective image quality assessment studies are used in many scenarios, such as 
 
 Below is an illustration of the framework:
 
-![Framework](src/Framework.png)
+![Framework](src/Framework.PNG)
 
 ## How to Set Up
 
@@ -23,27 +23,26 @@ Navigate to the project directory and add the `src` directory to your `PYTHONPAT
 export PYTHONPATH=${PWD}
 ```
 ## How to Run the Code
-#### Training
+### Training
 #####  1. Classifier Training / Predictor Training:
 The trained models for:
-- Classifier (SVM and XGBoost) models are stored in: src/training/Trained models/CLF
-- Predictor model are stored in: src/training/Trained models/Predictor
+- Classifier (SVM and XGBoost) are stored in: `src/training/Trained models/CLF`
+- Predictor are stored in: `src/training/Trained models/Predictor`
 
 
 If you wish to train the models from scratch, use the provided scripts:
-- Classifier training script : src/Training/CLF_training 
-- Predictor training script: src/Training/Predictor_training
+- Classifier training script : `src/Training/CLF_training`
+- Predictor training script: `src/Training/Predictor_training`
 
 #####  2. Ground-truth Data Creation:
 The ground truth labels can be obtained by running the following script: 
-  src/training/Groundtruth_data_collection/labeling
+  `src/training/Groundtruth_data_collection/labeling.py`
 
-#### Performance Evaluation
+### Performance Evaluation
 #####  1. Labeling Evaluation:
-Three labeling procedures were proposed and compared in this paper. To compare them, navigate to:
- src/Performance_Evaluation/labeling_compare to compare them
+Three labeling procedures were proposed and compared in this paper. To compare them, navigate to: `src/Performance_Evaluation/labeling_compare.py` to compare them
 #####  2. Ablation Study:
-To evaluate different components of the framework, navigate to: src/Ablation_study and run ablation_study.py
+To evaluate different components of the framework, navigate to: `src/Ablation_study and run ablation_study.py`
 
 # Citation
 ```
